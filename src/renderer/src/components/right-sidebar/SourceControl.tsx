@@ -1313,11 +1313,16 @@ function SourceControlInner(): React.JSX.Element {
         )
       : null
   const activePrFromQueue = activePrCacheKey ? (prCache[activePrCacheKey]?.data ?? null) : null
-  const hostedReview: HostedReviewInfo | null = hostedReviewCacheKey
-    ? activePrFromQueue
-      ? { provider: 'github', ...activePrFromQueue, status: activePrFromQueue.checksStatus }
-      : (hostedReviewEntry?.data ?? null)
-    : null
+  const hostedReviewEntryData = hostedReviewEntry?.data ?? null
+  const hostedReview: HostedReviewInfo | null = useMemo(() => {
+    if (!hostedReviewCacheKey) {
+      return null
+    }
+    if (activePrFromQueue) {
+      return { provider: 'github', ...activePrFromQueue, status: activePrFromQueue.checksStatus }
+    }
+    return hostedReviewEntryData
+  }, [activePrFromQueue, hostedReviewCacheKey, hostedReviewEntryData])
   const effectiveBaseRef = resolveSourceControlBaseRef({
     worktreeBaseRef: normalizedWorktreeBaseRef,
     reviewBaseRefName: hostedReview?.baseRefName,
@@ -4350,12 +4355,9 @@ function SourceControlInner(): React.JSX.Element {
     if (shouldResetToLoading) {
       beginGitBranchCompareRequest(activeWorktreeId, requestKey, effectiveBaseRef)
     } else {
-      useAppStore.setState((s) => ({
-        gitBranchCompareRequestKeyByWorktree: {
-          ...s.gitBranchCompareRequestKeyByWorktree,
-          [activeWorktreeId]: requestKey
-        }
-      }))
+      beginGitBranchCompareRequest(activeWorktreeId, requestKey, effectiveBaseRef, {
+        preserveExistingSummary: true
+      })
     }
 
     try {
