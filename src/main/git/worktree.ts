@@ -29,6 +29,7 @@ type SparseWorktreeCreateError = Error & {
 
 export type GitWorktreeExecOptions = {
   wslDistro?: string
+  signal?: AbortSignal
 }
 
 export type AddWorktreeOptions = GitWorktreeExecOptions & {
@@ -69,8 +70,12 @@ const SPARSE_CHECKOUT_DETECTION_CONCURRENCY = 8
 function gitExecOptions(
   cwd: string,
   options: GitWorktreeExecOptions = {}
-): { cwd: string; wslDistro?: string } {
-  return options.wslDistro ? { cwd, wslDistro: options.wslDistro } : { cwd }
+): { cwd: string; wslDistro?: string; signal?: AbortSignal } {
+  return {
+    cwd,
+    ...(options.wslDistro ? { wslDistro: options.wslDistro } : {}),
+    ...(options.signal ? { signal: options.signal } : {})
+  }
 }
 
 function getErrorCode(error: unknown): string | undefined {
